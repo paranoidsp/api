@@ -316,6 +316,47 @@ const k8sBody = {
       replicas
     }
   }),
+  profileDeployment: (user, vars) => ({
+    kind: 'Deployment',
+    spec: {
+      revisionHistoryLimit: 0,
+      template: {
+        spec: {
+          containers: [
+            {
+              image: globals.imad.simpleProfilePage,
+              name: user,
+              env: vars.concat([
+                {
+                  name: 'USER',
+                  value: user
+                }
+              ]),
+              ports: [
+                {
+                  containerPort: 8080
+                }
+              ]
+            }
+          ]
+        },
+        metadata: {
+          labels: {
+            app: user
+          }
+        }
+      },
+      replicas: 1
+    },
+    apiVersion: 'extensions/v1beta1',
+    metadata: {
+      namespace: globals.k8s.userspace,
+      labels: {
+        app: user
+      },
+      name: user
+    }
+  }),
   deployment: (user, gitUrl, gitRevision, vars) => ({
     kind: 'Deployment',
     spec: {
@@ -421,6 +462,26 @@ const k8s = {
     });
     return promise;
   },
+  updateProfileDeployment: (oldDeployment, index_html) => {
+      const promise = new Promise((resolve, reject) => {
+          const messages = [];
+          const newDeployment = JSON.parse(JSON.stringify(oldDeployment));
+          console.log(newDeployment.spec.template.spec);
+          newDeployment.spec.template.spec.containers[0].env[0].value = index_html;
+          // The user info is the name of the deployment
+          makeK8sReq('getDepl', oldDeployment.metadata.name, 'PUT', newDeployment)
+              .then(
+                  (data) => {
+                      messages.push(msgFormat('putProfileDeployment', true, data));
+                      resolve(messages);
+                  },
+                  (error) => {
+                      messages.push(msgFormat('putProfileDeployment', false, error));
+                      reject(messages);
+                  });
+      });
+      return promise;
+  },
   updateDeployment: (oldDeployment, gitRevision) => {
     const promise = new Promise((resolve, reject) => {
       const messages = [];
@@ -497,6 +558,35 @@ const k8s = {
           }
         )
         ;
+    });
+    return promise;
+  },
+  startProfile: (user, vars) => {
+    const promise = new Promise((resolve, reject) => {
+      const messages = [];
+      console.log(k8sBody.profileDeployment(user, vars));
+      makeK8sReq('postDepl', user, 'POST', k8sBody.profileDeployment(user, vars))
+        .then(
+          (data) => {
+            messages.push(msgFormat('postProfileDeployment', true, data));
+            return makeK8sReq('postService', user, 'POST', k8sBody.service(user));
+          },
+          (error) => {
+            // revert configmap
+            messages.push(msgFormat('postProfileDeployment', false, error));
+            reject(messages);
+          })
+        .then(
+          (data) => {
+            messages.push(msgFormat('postService', true, data));
+            resolve(messages);
+          },
+          (error) => {
+            // revert deployment
+            messages.push(msgFormat('postService', false, error));
+            reject(messages);
+          }
+        );
     });
     return promise;
   },

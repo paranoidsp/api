@@ -296,6 +296,60 @@ const routes = (app) => {
     });
   });
 
+  app.post('/profile', jsonParser, (req, res) => {
+    const profileIndex = req.body.index;
+    const returnData = {
+      success: false,
+      message: []
+    };
+    getUserDetails(req, res, (username, hasuraId, userData) => {
+      let user = username;
+      if (hasuraId === 1) {
+        user = req.query.user;
+        if (!user) {
+          returnData.message.push(msgFormat('getUserParam', false, 'query param user not found'));
+          res.status(400).send(returnData);
+          return;
+        }
+      }
+
+      k8s.getStatus(user)
+        .then(
+          (data) => {
+            returnData.message.push(msgFormat('getProfileDeployment', true, data));
+            // if running, patch deployment with new revision
+            return k8s.updateProfileDeployment(data, profileIndex);
+          },
+          (error) => {
+            returnData.message.push(msgFormat('getDeployment', false, error));
+            // if not running, start
+            const vars = [
+              {
+                name: 'INDEX_HTML',
+                value: profileIndex
+              }
+            ];
+            return k8s.startProfile(user, vars);
+          })
+        .then(
+          (data) => {
+            returnData.success = true;
+            returnData.message.push(...data);
+            res.send(returnData);
+          },
+          (error) => {
+            console.log(error);
+            returnData.message.push.apply(...error);
+            res.status(500).send(returnData);
+          })
+        .catch(e => {
+          console.log(e);
+          console.log(e.stack);
+          res.status(500).send('Internal error. Exception thrown');
+        });
+    });
+  });
+
   app.post('/restart', jsonParser, (req, res) => {
     const gitUrl = req.body.gitUrl;
     const gitRevision = req.body.gitRevision;
