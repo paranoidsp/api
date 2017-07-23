@@ -297,12 +297,12 @@ const routes = (app) => {
   });
 
   app.post('/profile', jsonParser, (req, res) => {
-    const profileIndex = req.body.index;
+    const profileIndex = req.body.indexHtml;
     const returnData = {
       success: false,
       message: []
     };
-    getUserDetails(req, res, (username, hasuraId, userData) => {
+    getUserDetails(req, res, (username, hasuraId) => {
       let user = username;
       if (hasuraId === 1) {
         user = req.query.user;

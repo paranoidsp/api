@@ -462,25 +462,25 @@ const k8s = {
     });
     return promise;
   },
-  updateProfileDeployment: (oldDeployment, index_html) => {
-      const promise = new Promise((resolve, reject) => {
-          const messages = [];
-          const newDeployment = JSON.parse(JSON.stringify(oldDeployment));
-          console.log(newDeployment.spec.template.spec);
-          newDeployment.spec.template.spec.containers[0].env[0].value = index_html;
-          // The user info is the name of the deployment
-          makeK8sReq('getDepl', oldDeployment.metadata.name, 'PUT', newDeployment)
-              .then(
-                  (data) => {
-                      messages.push(msgFormat('putProfileDeployment', true, data));
-                      resolve(messages);
-                  },
-                  (error) => {
-                      messages.push(msgFormat('putProfileDeployment', false, error));
-                      reject(messages);
-                  });
-      });
-      return promise;
+  updateProfileDeployment: (oldDeployment, indexHtml) => {
+    const promise = new Promise((resolve, reject) => {
+      const messages = [];
+      const newDeployment = JSON.parse(JSON.stringify(oldDeployment));
+      console.log(newDeployment.spec.template.spec);
+      newDeployment.spec.template.spec.containers[0].env[0].value = indexHtml;
+      // The user info is the name of the deployment
+      makeK8sReq('getDepl', oldDeployment.metadata.name, 'PUT', newDeployment)
+        .then(
+          (data) => {
+            messages.push(msgFormat('putProfileDeployment', true, data));
+            resolve(messages);
+          },
+          (error) => {
+            messages.push(msgFormat('putProfileDeployment', false, error));
+            reject(messages);
+          });
+    });
+    return promise;
   },
   updateDeployment: (oldDeployment, gitRevision) => {
     const promise = new Promise((resolve, reject) => {

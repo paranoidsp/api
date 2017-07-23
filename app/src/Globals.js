@@ -8,6 +8,7 @@ const globals = {
   },
   imad: {
     simpleNodeAppImage: process.env.SIMPLE_NODE_WEB_APP || 'hasura/simple-node-web-app:latest',
+    simpleProfilePage: process.env.SIMPLE_PROFILE_PAGE || 'hasura/simple-profile-page:latest',
     namespace: process.env.NAMESPACE || 'default'
   }
 };
