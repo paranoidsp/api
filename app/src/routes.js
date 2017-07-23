@@ -298,20 +298,11 @@ const routes = (app) => {
 
   app.post('/profile', jsonParser, (req, res) => {
     const profileIndex = req.body.indexHtml;
+    const username = req.body.username;
     const returnData = {
       success: false,
       message: []
     };
-    getUserDetails(req, res, (username, hasuraId) => {
-      let user = username;
-      if (hasuraId === 1) {
-        user = req.query.user;
-        if (!user) {
-          returnData.message.push(msgFormat('getUserParam', false, 'query param user not found'));
-          res.status(400).send(returnData);
-          return;
-        }
-      }
 
       k8s.getStatus(user)
         .then(
@@ -366,6 +357,7 @@ const routes = (app) => {
           res.status(400).send(returnData);
           return;
         }
+
       }
       // If the server is started, the started time stamp should be mentioned in the logger table
       // However, this started timestamp will be refreshed everytime restart is called
